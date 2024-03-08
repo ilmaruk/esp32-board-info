@@ -3,12 +3,16 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+#include <WeatherGenerator.hpp>
+
 #include "secrets.h"
 
 WiFiClient espClient;
 
-const double_t latitude = 45.35735430070989;
-const double_t longitude = 9.650215542624574;
+const double latitude = 45.35735430070989;
+const double longitude = 9.650215542624574;
+
+WeatherGenerator weather_g(OPENWEATHERMAPORG_APPID, latitude, longitude);
 
 void connectToWiFi(const char* ssid, const char* pass) {
   Serial.print("Connecting to WiFi ");
@@ -24,34 +28,6 @@ void connectToWiFi(const char* ssid, const char* pass) {
   Serial.println(WiFi.localIP());
 }
 
-void get_weather(const char* appid, double_t lat, double_t lon) {
-  HTTPClient http;
-
-  String url = String("https://api.openweathermap.org/data/2.5/weather") + \
-    String("?appid=") + String(appid) + \
-    String("&lat=") + String(lat) + \
-    String("&lon=") + String(lon) + \
-    String("&units=metric&lang=it");
-  http.begin(url.c_str());
-
-  int httpResponseCode = http.GET();
-  if (httpResponseCode != 200) {
-    Serial.println("Failed to get weather update");
-    Serial.println(httpResponseCode);
-    return;
-  }
-
-  String body = http.getString();
-
-  JsonDocument doc;
-  deserializeJson(doc, body.c_str());
-
-  String banner = String("Meteo ") + String(doc["name"].as<String>()) + String(": ") + \
-    String(doc["weather"][0]["description"].as<String>()) + String(" ") + \
-    String(doc["main"]["temp"].as<double>(), 1) + String("C");
-  Serial.println(banner);
-}
-
 void setup() {
   delay(100);
 
@@ -62,6 +38,6 @@ void setup() {
 }
 
 void loop() {
-  get_weather(OPENWEATHERMAPORG_APPID, latitude, longitude);
+  weather_g.generate();
   delay(5000);
 }
